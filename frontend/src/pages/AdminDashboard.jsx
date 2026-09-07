@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Calendar, Users, Image as ImageIcon, Share2, Trash2, CheckCircle2, Shield, AlertCircle, ExternalLink, Sparkles, FolderPlus, Layers } from 'lucide-react';
+import { Plus, Calendar, Users, Image as ImageIcon, Share2, Trash2, CheckCircle2, Shield, AlertCircle, ExternalLink, Sparkles, FolderPlus, Layers, UserPlus, Check } from 'lucide-react';
 import { eventService } from '../services/eventService';
 import { photoService } from '../services/photoService';
 import { authService } from '../services/authService';
 import PhotoGrid from '../components/PhotoGrid';
-import PhotoUploader from '../components/PhotoUploader';
 import PublishGalleryModal from '../components/PublishGalleryModal';
 
 export default function AdminDashboard() {
@@ -16,12 +15,23 @@ export default function AdminDashboard() {
   // UI Modals & Loading
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
+  const [teamModalTab, setTeamModalTab] = useState('assign'); // 'assign' | 'create'
   const [loading, setLoading] = useState(true);
 
   // Create Event Form State
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assignedMemberIds, setAssignedMemberIds] = useState([]);
+
+  // Manage Team Modal State
+  const [eventTeamMemberIds, setEventTeamMemberIds] = useState([]);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberPassword, setNewMemberPassword] = useState('');
+  const [savingMembers, setSavingMembers] = useState(false);
+  const [creatingMember, setCreatingMember] = useState(false);
+  const [teamModalMessage, setTeamModalMessage] = useState(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -30,10 +40,13 @@ export default function AdminDashboard() {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [eventsData, membersData] = await Promise.all([
+      const [eventsResult, membersResult] = await Promise.allSettled([
         eventService.getEvents(),
         authService.getTeamMembers()
       ]);
+      const eventsData = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
+      const membersData = membersResult.status === 'fulfilled' ? membersResult.value : [];
+      
       setEvents(eventsData);
       setTeamMembers(membersData);
       if (eventsData.length > 0) {
@@ -56,6 +69,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleOpenCreateModal = async () => {
+    try {
+      const freshMembers = await authService.getTeamMembers();
+      setTeamMembers(freshMembers);
+    } catch (err) {
+      console.warn('Could not refresh team members:', err);
+    }
+    setShowCreateModal(true);
+  };
+
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     if (!title) return;
@@ -70,7 +93,89 @@ export default function AdminDashboard() {
       setDescription('');
       setAssignedMemberIds([]);
     } catch (err) {
-      alert('Failed to create event.');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to create event.';
+      alert(`Failed to create event: ${errMsg}`);
+    }
+  };
+
+  const handleOpenTeamModal = async (tab = 'assign') => {
+    try {
+      const freshMembers = await authService.getTeamMembers();
+      setTeamMembers(freshMembers);
+    } catch (err) {
+      console.warn('Could not refresh team members:', err);
+    }
+
+    if (selectedEvent) {
+      setEventTeamMemberIds(selectedEvent.members ? selectedEvent.members.map(m => m.id) : []);
+    } else {
+      setEventTeamMemberIds([]);
+    }
+    setTeamModalTab(tab);
+    setTeamModalMessage(null);
+    setShowTeamModal(true);
+  };
+
+  const handleSaveEventTeam = async (e) => {
+    e.preventDefault();
+    if (!selectedEvent) return;
+
+    setSavingMembers(true);
+    setTeamModalMessage(null);
+    try {
+      const updatedEvent = await eventService.assignMembers(selectedEvent.id, eventTeamMemberIds);
+      setSelectedEvent(updatedEvent);
+      setEvents(prev => prev.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev));
+      setTeamModalMessage({ type: 'success', text: 'Team member assignments updated successfully!' });
+      setTimeout(() => setShowTeamModal(false), 1200);
+    } catch (err) {
+      setTeamModalMessage({ type: 'error', text: err.response?.data?.detail || 'Failed to update assignments.' });
+    } finally {
+      setSavingMembers(false);
+    }
+  };
+
+  const handleCreateNewTeamMember = async (e) => {
+    e.preventDefault();
+    if (!newMemberName || !newMemberEmail || !newMemberPassword) {
+      setTeamModalMessage({ type: 'error', text: 'Please fill in all team member fields.' });
+      return;
+    }
+
+    setCreatingMember(true);
+    setTeamModalMessage(null);
+    try {
+      const createdUser = await authService.register(newMemberName, newMemberEmail, newMemberPassword, 'TEAM_MEMBER');
+      const updatedMembers = await authService.getTeamMembers();
+      setTeamMembers(updatedMembers);
+      
+      // If an event is selected, auto-check new member
+      if (createdUser && createdUser.id) {
+        setEventTeamMemberIds(prev => [...prev, createdUser.id]);
+      }
+      
+      setNewMemberName('');
+      setNewMemberEmail('');
+      setNewMemberPassword('');
+      setTeamModalMessage({
+        type: 'success',
+        text: `Team member ${createdUser.name} registered successfully! You can now assign them.`
+      });
+      setTeamModalTab('assign');
+    } catch (err) {
+      const rawDetail = err.response?.data?.detail;
+      const detailMsg = typeof rawDetail === 'string' ? rawDetail : 'Failed to create team member.';
+      const hint = detailMsg.toLowerCase().includes('already exists')
+        ? ' Switch to the "Assign to Event" tab to assign them to this shoot.'
+        : '';
+      setTeamModalMessage({
+        type: 'error',
+        text: `${detailMsg}${hint}`
+      });
+      // Always refresh team members from server in case user exists in DB
+      authService.getTeamMembers().then(m => setTeamMembers(m)).catch(() => {});
+    } finally {
+      setCreatingMember(false);
     }
   };
 
@@ -138,13 +243,23 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-lg shadow-indigo-500/20 transition-all self-start md:self-auto"
-          >
-            <FolderPlus className="w-4 h-4" />
-            <span>Create New Event</span>
-          </button>
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            <button
+              onClick={() => handleOpenTeamModal('create')}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold shadow-xs transition-all"
+            >
+              <UserPlus className="w-4 h-4 text-emerald-600" />
+              <span>Add Team Member</span>
+            </button>
+
+            <button
+              onClick={handleOpenCreateModal}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-lg shadow-indigo-500/20 transition-all"
+            >
+              <FolderPlus className="w-4 h-4" />
+              <span>Create New Event</span>
+            </button>
+          </div>
         </div>
 
         {/* Snapflo Metrics Grid */}
@@ -179,8 +294,14 @@ export default function AdminDashboard() {
           {loading ? (
             <div className="p-8 text-center text-gray-400 text-xs">Loading events...</div>
           ) : events.length === 0 ? (
-            <div className="p-6 text-center rounded-2xl bg-white border border-gray-200 text-gray-500 text-xs">
-              No events created yet. Click "Create New Event" to get started.
+            <div className="p-6 text-center rounded-2xl bg-white border border-gray-200 text-gray-500 text-xs space-y-2">
+              <p>No events created yet.</p>
+              <button
+                onClick={handleOpenCreateModal}
+                className="text-indigo-600 font-bold hover:underline"
+              >
+                Click "Create New Event" to get started
+              </button>
             </div>
           ) : (
             <div className="space-y-2.5">
@@ -261,24 +382,34 @@ export default function AdminDashboard() {
                   </button>
                 </div>
 
-                {/* Assigned Team Badges */}
-                <div className="flex items-center gap-2 pt-3 border-t border-gray-100 text-xs text-gray-600">
-                  <Users className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-bold text-gray-700">Assigned Team:</span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedEvent.members?.length > 0 ? (
-                      selectedEvent.members.map((m) => (
-                        <span
-                          key={m.id}
-                          className="px-2.5 py-0.5 rounded-md bg-gray-100 text-gray-800 text-[11px] font-semibold border border-gray-200"
-                        >
-                          {m.name}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-400 italic">No members assigned</span>
-                    )}
+                {/* Assigned Team Badges & Manage Button */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 text-xs text-gray-600">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Users className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-bold text-gray-700">Assigned Team:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedEvent.members?.length > 0 ? (
+                        selectedEvent.members.map((m) => (
+                          <span
+                            key={m.id}
+                            className="px-2.5 py-0.5 rounded-md bg-gray-100 text-gray-800 text-[11px] font-semibold border border-gray-200"
+                          >
+                            {m.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-400 italic">No members assigned</span>
+                      )}
+                    </div>
                   </div>
+
+                  <button
+                    onClick={() => handleOpenTeamModal('assign')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs transition-colors border border-emerald-200"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Manage / Add Members</span>
+                  </button>
                 </div>
 
                 {selectedEvent.is_published && selectedEvent.share_slug && (
@@ -296,15 +427,6 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
-
-              {/* Photo Uploader Component for Admin */}
-              <PhotoUploader
-                eventId={selectedEvent.id}
-                onUploadSuccess={(newPhotos) => {
-                  setEventPhotos(prev => [...newPhotos, ...prev]);
-                  setSelectedEvent(prev => prev ? { ...prev, photo_count: prev.photo_count + newPhotos.length } : prev);
-                }}
-              />
 
               {/* Photo Grid with Checkboxes */}
               <div className="space-y-3">
@@ -417,6 +539,199 @@ export default function AdminDashboard() {
             setEvents(prev => prev.map(e => e.id === selectedEvent.id ? { ...e, is_published: true, share_slug: galleryData.share_slug } : e));
           }}
         />
+      )}
+
+      {/* Manage Team Members Modal */}
+      {showTeamModal && (
+        <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-3xl border border-gray-200 p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Manage Team Members</h3>
+                  {selectedEvent && (
+                    <p className="text-xs text-gray-500">For event: <span className="font-semibold text-gray-700">{selectedEvent.title}</span></p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTeamModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 transition-colors text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="flex rounded-xl bg-gray-100 p-1">
+              <button
+                type="button"
+                onClick={() => { setTeamModalTab('assign'); setTeamModalMessage(null); }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  teamModalTab === 'assign'
+                    ? 'bg-white text-gray-900 shadow-xs'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Assign to Event
+              </button>
+              <button
+                type="button"
+                onClick={() => { setTeamModalTab('create'); setTeamModalMessage(null); }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  teamModalTab === 'create'
+                    ? 'bg-white text-gray-900 shadow-xs'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                + Register New Member
+              </button>
+            </div>
+
+            {/* Notification alert */}
+            {teamModalMessage && (
+              <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                teamModalMessage.type === 'success'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {teamModalMessage.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                )}
+                <span>{teamModalMessage.text}</span>
+              </div>
+            )}
+
+            {/* Tab 1: Assign Team Members */}
+            {teamModalTab === 'assign' && (
+              <form onSubmit={handleSaveEventTeam} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Select Photographers / Team Members for this Event:
+                  </label>
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 border border-gray-200 rounded-xl p-2.5 bg-gray-50/50">
+                    {teamMembers.length > 0 ? (
+                      teamMembers.map((m) => (
+                        <label
+                          key={m.id}
+                          className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer p-2 hover:bg-white rounded-lg transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={eventTeamMemberIds.includes(m.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEventTeamMemberIds([...eventTeamMemberIds, m.id]);
+                              } else {
+                                setEventTeamMemberIds(eventTeamMemberIds.filter(id => id !== m.id));
+                              }
+                            }}
+                            className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900">{m.name}</p>
+                            <p className="text-[10px] text-gray-500 truncate">{m.email}</p>
+                          </div>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-xs text-gray-400">No team members registered yet.</p>
+                        <button
+                          type="button"
+                          onClick={() => setTeamModalTab('create')}
+                          className="text-xs text-indigo-600 font-bold hover:underline mt-1"
+                        >
+                          + Register your first photographer
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowTeamModal(false)}
+                    className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingMembers || !selectedEvent}
+                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 disabled:opacity-50"
+                  >
+                    {savingMembers ? 'Saving...' : 'Save Assignments'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Tab 2: Register New Team Member */}
+            {teamModalTab === 'create' && (
+              <form onSubmit={handleCreateNewTeamMember} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Photographer Full Name</label>
+                  <input
+                    type="text"
+                    value={newMemberName}
+                    onChange={(e) => setNewMemberName(e.target.value)}
+                    placeholder="e.g. Rohith Verma"
+                    className="w-full px-3.5 py-2.5 rounded-xl snapflo-input text-xs font-medium"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    placeholder="rohith@trizen.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl snapflo-input text-xs font-medium"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Temporary Password</label>
+                  <input
+                    type="password"
+                    value={newMemberPassword}
+                    onChange={(e) => setNewMemberPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="w-full px-3.5 py-2.5 rounded-xl snapflo-input text-xs font-medium"
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowTeamModal(false)}
+                    className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creatingMember}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 disabled:opacity-50"
+                  >
+                    {creatingMember ? 'Registering...' : 'Register Team Member'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import { photoService } from '../services/photoService';
 export default function PhotoGrid({
   photos,
   isAdmin = false,
+  currentUserId = null,
   onToggleSelection,
   onPhotoDeleted,
   onBatchSelectToggle
@@ -22,7 +23,7 @@ export default function PhotoGrid({
       await photoService.deletePhoto(photoId);
       if (onPhotoDeleted) onPhotoDeleted(photoId);
     } catch (err) {
-      alert('Failed to delete photo.');
+      alert(err.response?.data?.detail || 'Failed to delete photo.');
     } finally {
       setDeletingId(null);
     }
@@ -45,7 +46,7 @@ export default function PhotoGrid({
   if (photos.length === 0) {
     return (
       <div className="py-16 text-center rounded-3xl bg-white border border-gray-200">
-        <p className="text-gray-500 text-sm font-medium">No photos uploaded yet for this event.</p>
+        <p className="text-gray-500 text-sm font-medium">No photos found for this view.</p>
       </div>
     );
   }
@@ -82,57 +83,71 @@ export default function PhotoGrid({
 
       {/* Grid View */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {photos.map((photo) => (
-          <div
-            key={photo.id}
-            onClick={() => setSelectedPhoto(photo)}
-            className={`group relative rounded-2xl overflow-hidden aspect-square bg-gray-100 border cursor-pointer transition-all duration-300 ${
-              photo.is_selected
-                ? 'border-indigo-600 ring-2 ring-indigo-500/30 shadow-md'
-                : 'border-gray-200 hover:border-gray-300 shadow-xs'
-            }`}
-          >
-            <img
-              src={photo.file_url}
-              alt={photo.filename}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
+        {photos.map((photo) => {
+          const isOwnPhoto = currentUserId && photo.uploaded_by === currentUserId;
+          const canDelete = isAdmin || isOwnPhoto;
 
-            {/* Selection Checkbox for Admin */}
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onToggleSelection) onToggleSelection(photo.id);
-                }}
-                className={`absolute top-2.5 left-2.5 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                  photo.is_selected
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-white/80 backdrop-blur-sm border border-gray-300 text-gray-400 opacity-90 group-hover:opacity-100 hover:text-gray-900'
-                }`}
-              >
-                <Check className={`w-4 h-4 ${photo.is_selected ? 'stroke-[3]' : ''}`} />
-              </button>
-            )}
+          return (
+            <div
+              key={photo.id}
+              onClick={() => setSelectedPhoto(photo)}
+              className={`group relative rounded-2xl overflow-hidden aspect-square bg-gray-100 border cursor-pointer transition-all duration-300 ${
+                photo.is_selected
+                  ? 'border-indigo-600 ring-2 ring-indigo-500/30 shadow-md'
+                  : 'border-gray-200 hover:border-gray-300 shadow-xs'
+              }`}
+            >
+              <img
+                src={photo.file_url}
+                alt={photo.filename}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
 
-            {/* Overlay Gradient on Hover */}
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
-              <p className="text-[11px] font-medium text-white truncate">{photo.filename}</p>
-              <div className="flex items-center justify-between text-[10px] text-gray-300 mt-1">
-                <span>By {photo.uploader_name || 'Team'}</span>
+              {/* Selection Checkbox for Admin */}
+              {isAdmin && (
                 <button
-                  onClick={(e) => handleDelete(photo.id, e)}
-                  className="p-1 text-gray-300 hover:text-red-400 transition-colors"
-                  title="Delete Photo"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onToggleSelection) onToggleSelection(photo.id);
+                  }}
+                  className={`absolute top-2.5 left-2.5 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                    photo.is_selected
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'bg-white/80 backdrop-blur-sm border border-gray-300 text-gray-400 opacity-90 group-hover:opacity-100 hover:text-gray-900'
+                  }`}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Check className={`w-4 h-4 ${photo.is_selected ? 'stroke-[3]' : ''}`} />
                 </button>
+              )}
+
+              {/* Team Member "Your Upload" Badge */}
+              {!isAdmin && isOwnPhoto && (
+                <span className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 rounded-md bg-emerald-600/90 backdrop-blur-sm text-white text-[10px] font-bold shadow-xs">
+                  Your Upload
+                </span>
+              )}
+
+              {/* Overlay Gradient on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
+                <p className="text-[11px] font-medium text-white truncate">{photo.filename}</p>
+                <div className="flex items-center justify-between text-[10px] text-gray-300 mt-1">
+                  <span>{isOwnPhoto ? 'Uploaded by you' : `By ${photo.uploader_name || 'Team'}`}</span>
+                  {canDelete && (
+                    <button
+                      onClick={(e) => handleDelete(photo.id, e)}
+                      className="p-1 text-gray-300 hover:text-red-400 transition-colors"
+                      title="Delete Photo"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Lightbox Modal */}

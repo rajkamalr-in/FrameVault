@@ -40,7 +40,8 @@ def _format_event_response(event: Event, db: Session) -> dict:
     }
 
 
-@router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_event(
     event_in: EventCreate,
     current_user: User = Depends(get_admin_user),
@@ -67,7 +68,8 @@ def create_event(
     return _format_event_response(event, db)
 
 
-@router.get("/", response_model=List[EventResponse])
+@router.get("", response_model=List[EventResponse])
+@router.get("/", response_model=List[EventResponse], include_in_schema=False)
 def get_events(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

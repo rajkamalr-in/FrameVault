@@ -9,6 +9,7 @@ export default function TeamDashboard({ user }) {
   const [assignedEvents, setAssignedEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [eventPhotos, setEventPhotos] = useState([]);
+  const [photoFilter, setPhotoFilter] = useState('mine'); // 'mine' | 'all'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -41,19 +42,42 @@ export default function TeamDashboard({ user }) {
     }
   };
 
+  const myPhotos = eventPhotos.filter(p => p.uploaded_by === user?.id);
+  const displayedPhotos = photoFilter === 'mine' ? myPhotos : eventPhotos;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Top Banner */}
-      <div className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">
-            <Users className="w-4 h-4" />
-            <span>Team Photographer Portal</span>
+      {/* Top Banner & Photographer Quick Stats */}
+      <div className="bg-white p-6 rounded-3xl border border-gray-200/80 shadow-xs space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">
+              <Users className="w-4 h-4" />
+              <span>Team Photographer Portal</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              Welcome, {user?.name || 'Photographer'}
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Upload and manage your shoot photographs for lead review and customer gallery selection.
+            </p>
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Welcome, {user?.name || 'Photographer'}</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Upload raw and edited event photographs for lead review and customer gallery selection.
-          </p>
+        </div>
+
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-100">
+          <div className="p-4 rounded-2xl bg-[#FAFAF7] border border-gray-200/60">
+            <span className="text-xs font-medium text-gray-500">Your Assigned Shoots</span>
+            <p className="text-2xl font-extrabold text-gray-900 mt-1">{assignedEvents.length}</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-[#FAFAF7] border border-gray-200/60">
+            <span className="text-xs font-medium text-gray-500">Your Uploads (Current Shoot)</span>
+            <p className="text-2xl font-extrabold text-emerald-600 mt-1">{myPhotos.length}</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-[#FAFAF7] border border-gray-200/60 col-span-2 sm:col-span-1">
+            <span className="text-xs font-medium text-gray-500">Total Shoot Photos</span>
+            <p className="text-2xl font-extrabold text-indigo-600 mt-1">{eventPhotos.length}</p>
+          </div>
         </div>
       </div>
 
@@ -109,10 +133,17 @@ export default function TeamDashboard({ user }) {
           {selectedEvent ? (
             <div className="space-y-6">
               <div className="p-6 rounded-3xl bg-white border border-gray-200/80 shadow-xs">
-                <h2 className="text-xl font-extrabold text-gray-900">{selectedEvent.title}</h2>
-                {selectedEvent.description && (
-                  <p className="text-xs text-gray-500 mt-1">{selectedEvent.description}</p>
-                )}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-extrabold text-gray-900">{selectedEvent.title}</h2>
+                    {selectedEvent.description && (
+                      <p className="text-xs text-gray-500 mt-1">{selectedEvent.description}</p>
+                    )}
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                    Assigned Photographer
+                  </span>
+                </div>
               </div>
 
               {/* Upload Component */}
@@ -124,13 +155,54 @@ export default function TeamDashboard({ user }) {
                 }}
               />
 
-              {/* Uploaded Photos Grid View */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-gray-900">Event Photo Feed ({eventPhotos.length})</h3>
+              {/* Uploaded Photos Section with Filter Tabs */}
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900">
+                      {photoFilter === 'mine' ? `Your Uploads (${myPhotos.length})` : `All Shoot Photos (${eventPhotos.length})`}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {photoFilter === 'mine'
+                        ? 'Review and manage photographs you have contributed to this shoot.'
+                        : 'View all photographs contributed by the team for this shoot.'}
+                    </p>
+                  </div>
+
+                  {/* Filter Tabs */}
+                  <div className="flex rounded-xl bg-gray-100 p-1 self-start sm:self-auto border border-gray-200/60">
+                    <button
+                      onClick={() => setPhotoFilter('mine')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        photoFilter === 'mine'
+                          ? 'bg-white text-gray-900 shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      My Uploads ({myPhotos.length})
+                    </button>
+                    <button
+                      onClick={() => setPhotoFilter('all')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        photoFilter === 'all'
+                          ? 'bg-white text-gray-900 shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      All Photos ({eventPhotos.length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Photo Grid with currentUserId passed for authorization */}
                 <PhotoGrid
-                  photos={eventPhotos}
+                  photos={displayedPhotos}
                   isAdmin={false}
-                  onPhotoDeleted={(photoId) => setEventPhotos(prev => prev.filter(p => p.id !== photoId))}
+                  currentUserId={user?.id}
+                  onPhotoDeleted={(photoId) => {
+                    setEventPhotos(prev => prev.filter(p => p.id !== photoId));
+                    setSelectedEvent(prev => prev ? { ...prev, photo_count: Math.max(0, prev.photo_count - 1) } : prev);
+                  }}
                 />
               </div>
             </div>
