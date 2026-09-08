@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   const user = authService.getUserFromStorage();
 
   if (!token || !user) {

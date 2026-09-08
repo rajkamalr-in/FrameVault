@@ -19,14 +19,20 @@ export default function TeamDashboard({ user }) {
 
   const fetchAssignedEvents = async () => {
     setLoading(true);
+    setError(''); // Clear any previous error before fetching
     try {
       const events = await eventService.getEvents();
       setAssignedEvents(events);
       if (events.length > 0) {
         handleSelectEvent(events[0]);
       }
+      // Success — clear any error (empty array is a valid result, not an error)
     } catch (err) {
-      setError('Failed to fetch assigned events.');
+      // Only show error banner on a genuine server/network failure
+      const status = err.response?.status;
+      if (status !== 200 && status !== undefined) {
+        setError('Unable to load events. Please try again or contact your Lead Admin.');
+      }
     } finally {
       setLoading(false);
     }
@@ -120,7 +126,11 @@ export default function TeamDashboard({ user }) {
                   )}
                   <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100 text-[11px] text-gray-500 font-medium">
                     <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>{event.photo_count} total photos</span>
+                    <span>
+                      {selectedEvent?.id === event.id
+                        ? eventPhotos.length
+                        : event.photo_count} total photos
+                    </span>
                   </div>
                 </div>
               ))}
@@ -149,9 +159,26 @@ export default function TeamDashboard({ user }) {
               {/* Upload Component */}
               <PhotoUploader
                 eventId={selectedEvent.id}
-                onUploadSuccess={(newPhotos) => {
+                onUploadSuccess={async (newPhotos) => {
+                  // Prepend newly uploaded photos to the photo list immediately
                   setEventPhotos(prev => [...newPhotos, ...prev]);
-                  setSelectedEvent(prev => prev ? { ...prev, photo_count: prev.photo_count + newPhotos.length } : prev);
+                  // Re-fetch the events list from the server to get accurate photo_count for all events
+                  try {
+                    const refreshedEvents = await eventService.getEvents();
+                    setAssignedEvents(refreshedEvents);
+                    // Keep the selectedEvent photo_count in sync with the refreshed list
+                    const refreshed = refreshedEvents.find(ev => ev.id === selectedEvent.id);
+                    if (refreshed) {
+                      setSelectedEvent(prev => prev ? { ...prev, photo_count: refreshed.photo_count } : prev);
+                    }
+                  } catch (_) {
+                    // Fallback: update count locally if refresh fails
+                    setAssignedEvents(prev => prev.map(ev =>
+                      ev.id === selectedEvent.id
+                        ? { ...ev, photo_count: (ev.photo_count || 0) + newPhotos.length }
+                        : ev
+                    ));
+                  }
                 }}
               />
 
@@ -201,7 +228,12 @@ export default function TeamDashboard({ user }) {
                   currentUserId={user?.id}
                   onPhotoDeleted={(photoId) => {
                     setEventPhotos(prev => prev.filter(p => p.id !== photoId));
-                    setSelectedEvent(prev => prev ? { ...prev, photo_count: Math.max(0, prev.photo_count - 1) } : prev);
+                    setSelectedEvent(prev => prev ? { ...prev, photo_count: Math.max(0, (prev.photo_count || 0) - 1) } : prev);
+                    setAssignedEvents(prev => prev.map(ev =>
+                      ev.id === selectedEvent.id
+                        ? { ...ev, photo_count: Math.max(0, (ev.photo_count || 0) - 1) }
+                        : ev
+                    ));
                   }}
                 />
               </div>

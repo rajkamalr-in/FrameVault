@@ -205,6 +205,8 @@ export default function AdminDashboard() {
 
   const handlePhotoDeleted = (photoId) => {
     setEventPhotos(prev => prev.filter(p => p.id !== photoId));
+    setSelectedEvent(prev => prev ? { ...prev, photo_count: Math.max(0, (prev.photo_count || 0) - 1) } : prev);
+    setEvents(prev => prev.map(ev => ev.id === selectedEvent?.id ? { ...ev, photo_count: Math.max(0, (ev.photo_count || 0) - 1) } : ev));
   };
 
   const handleDeleteEvent = async (eventId, e) => {

@@ -51,7 +51,7 @@ export default function PublicGallery() {
 
   if (loadingMeta) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-[#FAFAF7]">
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAF7]">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 rounded-full border-3 border-indigo-600 border-t-transparent animate-spin mx-auto" />
           <p className="text-xs text-gray-500 font-semibold">Verifying gallery access link...</p>
@@ -61,7 +61,7 @@ export default function PublicGallery() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 bg-[#FAFAF7]">
+    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8 bg-[#FAFAF7]">
       {/* If Not Authenticated with PIN yet -> Display PIN Entry Screen */}
       {!galleryData ? (
         <div className="max-w-md mx-auto pt-8 space-y-6">

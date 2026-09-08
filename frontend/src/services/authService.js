@@ -4,8 +4,10 @@ export const authService = {
   async login(email, password) {
     const response = await api.post('/auth/login', { email, password });
     if (response.data.access_token) {
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Use sessionStorage so each browser tab has its own independent session.
+      // This prevents cross-tab overwrites when multiple users log in on different tabs.
+      sessionStorage.setItem('token', response.data.access_token);
+      sessionStorage.setItem('user', JSON.stringify(response.data.user));
     }
     return response.data;
   },
@@ -26,12 +28,12 @@ export const authService = {
   },
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
   },
 
   getUserFromStorage() {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
   }
 };

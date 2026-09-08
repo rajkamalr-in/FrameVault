@@ -8,9 +8,10 @@ const api = axios.create({
 });
 
 // Attach JWT token to requests if available
+// Uses sessionStorage so each browser tab has its own independent session.
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,8 +27,8 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Don't auto-redirect if we are checking PIN on public gallery
       if (!error.config.url.includes('/galleries/public/')) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
       }
     }
     return Promise.reject(error);

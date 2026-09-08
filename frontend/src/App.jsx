@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -11,15 +11,16 @@ import { authService } from './services/authService';
 
 export default function App() {
   const [user, setUser] = useState(authService.getUserFromStorage());
+  const location = useLocation();
 
   useEffect(() => {
-    // Check user validity on initial mount if token present
-    const token = localStorage.getItem('token');
+    // Check user validity on initial mount if token present (tab-isolated via sessionStorage)
+    const token = sessionStorage.getItem('token');
     if (token) {
       authService.getCurrentUser()
         .then(userData => {
           setUser(userData);
-          localStorage.setItem('user', JSON.stringify(userData));
+          sessionStorage.setItem('user', JSON.stringify(userData));
         })
         .catch(() => {
           authService.logout();
@@ -36,9 +37,12 @@ export default function App() {
     setUser(null);
   };
 
+  // Hide the Navbar entirely on the public customer gallery pages — customers have no account.
+  const isPublicGallery = location.pathname.startsWith('/gallery/');
+
   return (
     <div className="min-h-screen bg-[#FAFAF7] text-gray-900 flex flex-col font-sans">
-      <Navbar user={user} onLogout={handleLogout} />
+      {!isPublicGallery && <Navbar user={user} onLogout={handleLogout} />}
 
       <main className="flex-1">
         <Routes>
@@ -57,7 +61,7 @@ export default function App() {
             }
           />
 
-          {/* Customer Public Gallery */}
+          {/* Customer Public Gallery — no login required, no Navbar */}
           <Route path="/gallery/:shareSlug" element={<PublicGallery />} />
 
           {/* Protected Routes */}
@@ -73,7 +77,7 @@ export default function App() {
           <Route
             path="/team"
             element={
-              <ProtectedRoute allowedRoles={['TEAM_MEMBER', 'ADMIN']}>
+              <ProtectedRoute allowedRoles={['TEAM_MEMBER']}>
                 <TeamDashboard user={user} />
               </ProtectedRoute>
             }
