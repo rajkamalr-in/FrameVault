@@ -173,7 +173,7 @@ export default function Home({ user }) {
           <div className="flex items-center gap-2">
             <TrizenLogo className="w-7 h-7" showText={true} />
           </div>
-          <p>&copy; 2026 TrizenAI Technologies Private Limited. All rights reserved.</p>
+          <p>&copy; 2026 FrameVault. All rights reserved.</p>
         </div>
       </footer>
     </div>
