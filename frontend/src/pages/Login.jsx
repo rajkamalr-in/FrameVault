@@ -7,13 +7,13 @@ import TrizenLogo from '../components/TrizenLogo';
 export default function Login({ onLoginSuccess }) {
   const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
-  
+
   // Form State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState('ADMIN');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,10 +62,10 @@ export default function Login({ onLoginSuccess }) {
             <TrizenLogo className="w-12 h-12" showText={false} />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold uppercase tracking-wider mb-2">
+            {/* <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold uppercase tracking-wider mb-2">
               <Sparkles className="w-3.5 h-3.5" />
               TrizenAI Studio Portal
-            </div>
+            </div> */}
             <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
               {isRegistering ? 'Create Studio Account' : 'Welcome Back'}
             </h1>
@@ -94,7 +94,7 @@ export default function Login({ onLoginSuccess }) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Arjun Sharma"
+                  placeholder="e.g. Rajkamal"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl snapflo-input text-xs font-medium"
                   required
                 />
@@ -110,7 +110,7 @@ export default function Login({ onLoginSuccess }) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@trizen-ai.com"
+                placeholder="name@abc.com"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl snapflo-input text-xs font-medium"
                 required
               />
@@ -139,11 +139,10 @@ export default function Login({ onLoginSuccess }) {
                 <button
                   type="button"
                   onClick={() => setRole('ADMIN')}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all ${
-                    role === 'ADMIN'
-                      ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-xs'
-                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all ${role === 'ADMIN'
+                    ? 'bg-indigo-50 border-indigo-600 text-indigo-700 shadow-xs'
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   <Shield className="w-4 h-4 text-indigo-600" />
                   <span>Admin / Lead</span>
@@ -151,11 +150,10 @@ export default function Login({ onLoginSuccess }) {
                 <button
                   type="button"
                   onClick={() => setRole('TEAM_MEMBER')}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all ${
-                    role === 'TEAM_MEMBER'
-                      ? 'bg-emerald-50 border-emerald-600 text-emerald-700 shadow-xs'
-                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all ${role === 'TEAM_MEMBER'
+                    ? 'bg-emerald-50 border-emerald-600 text-emerald-700 shadow-xs'
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   <Users className="w-4 h-4 text-emerald-600" />
                   <span>Team Member</span>

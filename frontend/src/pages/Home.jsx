@@ -39,11 +39,11 @@ export default function Home({ user }) {
       {/* Hero Section */}
       <section className="relative z-10 pt-12 pb-16 sm:pt-20 sm:pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center space-y-8 flex-1">
         {/* Top Announcement Pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm text-xs font-bold text-gray-800 animate-fadeIn">
+        {/* <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm text-xs font-bold text-gray-800 animate-fadeIn">
           <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
           <span>Photography Studio & Event Gallery Platform</span>
           <Sparkles className="w-3.5 h-3.5 text-indigo-600 ml-1" />
-        </div>
+        </div> */}
 
         {/* Hero Title */}
         <div className="space-y-4 max-w-4xl mx-auto">
@@ -92,9 +92,9 @@ export default function Home({ user }) {
                 type="text"
                 value={quickSlug}
                 onChange={(e) => setQuickSlug(e.target.value)}
-                placeholder="e.g. abc12345 or full gallery URL"
+                placeholder="Past or Type Full gallery URL"
                 className="flex-1 px-4 py-2.5 rounded-xl snapflo-input text-xs font-medium"
-                required
+                requiredS
               />
               <button
                 type="submit"
@@ -114,9 +114,9 @@ export default function Home({ user }) {
             <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
               Everything You Need to <span className="text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(to right, #6366F1, #FF6600)' }}>Run Your Studio</span>
             </h2>
-            <p className="text-sm text-gray-500 font-medium">
+            {/* <p className="text-sm text-gray-500 font-medium">
               Designed specifically for photography teams, lead admins, and clients.
-            </p>
+            </p> */}
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">

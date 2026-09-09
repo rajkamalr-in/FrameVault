@@ -11,7 +11,7 @@ export default function AdminDashboard() {
   const [teamMembers, setTeamMembers] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [eventPhotos, setEventPhotos] = useState([]);
-  
+
   // UI Modals & Loading
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -46,7 +46,7 @@ export default function AdminDashboard() {
       ]);
       const eventsData = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
       const membersData = membersResult.status === 'fulfilled' ? membersResult.value : [];
-      
+
       setEvents(eventsData);
       setTeamMembers(membersData);
       if (eventsData.length > 0) {
@@ -148,12 +148,12 @@ export default function AdminDashboard() {
       const createdUser = await authService.register(newMemberName, newMemberEmail, newMemberPassword, 'TEAM_MEMBER');
       const updatedMembers = await authService.getTeamMembers();
       setTeamMembers(updatedMembers);
-      
+
       // If an event is selected, auto-check new member
       if (createdUser && createdUser.id) {
         setEventTeamMemberIds(prev => [...prev, createdUser.id]);
       }
-      
+
       setNewMemberName('');
       setNewMemberEmail('');
       setNewMemberPassword('');
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
         text: `${detailMsg}${hint}`
       });
       // Always refresh team members from server in case user exists in DB
-      authService.getTeamMembers().then(m => setTeamMembers(m)).catch(() => {});
+      authService.getTeamMembers().then(m => setTeamMembers(m)).catch(() => { });
     } finally {
       setCreatingMember(false);
     }
@@ -183,9 +183,9 @@ export default function AdminDashboard() {
     try {
       const updatedPhoto = await photoService.toggleSelection(photoId);
       setEventPhotos(prev => prev.map(p => p.id === photoId ? updatedPhoto : p));
-      
+
       const newSelectedCount = eventPhotos.map(p => p.id === photoId ? updatedPhoto : p)
-                                         .filter(p => p.is_selected).length;
+        .filter(p => p.is_selected).length;
       setSelectedEvent(prev => prev ? { ...prev, selected_photo_count: newSelectedCount } : prev);
     } catch (err) {
       alert('Failed to update photo selection.');
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
           <h3 className="text-xs font-extrabold text-gray-700 uppercase tracking-wider px-1">
             Events ({events.length})
           </h3>
-          
+
           {loading ? (
             <div className="p-8 text-center text-gray-400 text-xs">Loading events...</div>
           ) : events.length === 0 ? (
@@ -311,11 +311,10 @@ export default function AdminDashboard() {
                 <div
                   key={event.id}
                   onClick={() => handleSelectEvent(event)}
-                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                    selectedEvent?.id === event.id
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${selectedEvent?.id === event.id
                       ? 'bg-white border-indigo-600 ring-2 ring-indigo-500/20 shadow-md'
                       : 'bg-white border-gray-200/80 hover:border-gray-300 hover:shadow-xs'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -459,7 +458,7 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white rounded-3xl border border-gray-200 p-6 space-y-4 shadow-2xl">
             <h3 className="text-lg font-bold text-gray-900">Create New Event</h3>
-            
+
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Event Title</label>
@@ -572,22 +571,20 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => { setTeamModalTab('assign'); setTeamModalMessage(null); }}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  teamModalTab === 'assign'
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${teamModalTab === 'assign'
                     ? 'bg-white text-gray-900 shadow-xs'
                     : 'text-gray-500 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 Assign to Event
               </button>
               <button
                 type="button"
                 onClick={() => { setTeamModalTab('create'); setTeamModalMessage(null); }}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  teamModalTab === 'create'
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${teamModalTab === 'create'
                     ? 'bg-white text-gray-900 shadow-xs'
                     : 'text-gray-500 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 + Register New Member
               </button>
@@ -595,11 +592,10 @@ export default function AdminDashboard() {
 
             {/* Notification alert */}
             {teamModalMessage && (
-              <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
-                teamModalMessage.type === 'success'
+              <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${teamModalMessage.type === 'success'
                   ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                   : 'bg-red-50 text-red-700 border border-red-200'
-              }`}>
+                }`}>
                 {teamModalMessage.type === 'success' ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 ) : (
@@ -684,7 +680,7 @@ export default function AdminDashboard() {
                     type="text"
                     value={newMemberName}
                     onChange={(e) => setNewMemberName(e.target.value)}
-                    placeholder="e.g. Rohith Verma"
+                    placeholder="e.g. Rajkamal"
                     className="w-full px-3.5 py-2.5 rounded-xl snapflo-input text-xs font-medium"
                     required
                   />
@@ -696,7 +692,7 @@ export default function AdminDashboard() {
                     type="email"
                     value={newMemberEmail}
                     onChange={(e) => setNewMemberEmail(e.target.value)}
-                    placeholder="rohith@trizen.com"
+                    placeholder="rajkamal@gmail.com"
                     className="w-full px-3.5 py-2.5 rounded-xl snapflo-input text-xs font-medium"
                     required
                   />
