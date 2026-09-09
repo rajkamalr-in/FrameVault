@@ -6,6 +6,7 @@ from app.main import app
 class TestTeamMemberWorkflow(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        
         cls.client = TestClient(app)
         cls.admin_email = "lead_admin_teamtest@trizen.com"
         cls.admin_pwd = "password123"

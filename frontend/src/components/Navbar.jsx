@@ -29,7 +29,7 @@ export default function Navbar({ user, onLogout }) {
                 <Users className="w-3.5 h-3.5 text-emerald-600" />
               )}
               <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-                {user.role === 'ADMIN' ? 'Lead Admin' : 'Team Member'}
+                {user.role === 'ADMIN' ? 'Lead' : 'Team Member'}
               </span>
             </div>
 
