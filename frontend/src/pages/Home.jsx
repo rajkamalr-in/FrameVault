@@ -54,7 +54,7 @@ export default function Home({ user }) {
             </span>
           </h1>
           <p className="text-base sm:text-xl text-gray-600 max-w-2xl mx-auto font-medium leading-relaxed">
-            TrizenAI FrameVault is studio management software for event leads & photographers — organize shoots, upload assets, select client favorites, and deliver PIN-protected galleries.
+            FrameVault is studio management software for event leads & photographers to organize shoots, upload assets, select client favorites, and deliver PIN-protected galleries.
           </p>
         </div>
 
@@ -67,7 +67,7 @@ export default function Home({ user }) {
             <span>{user ? 'Go to Dashboard' : 'Get Started Free'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
-          
+
           <a
             href="#features"
             className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 font-bold text-sm transition-all hover:scale-[1.02] shadow-xs flex items-center justify-center gap-2"
