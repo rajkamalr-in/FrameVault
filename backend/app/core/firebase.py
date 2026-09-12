@@ -2,24 +2,33 @@ import os
 import uuid
 import shutil
 import firebase_admin
-from firebase_admin import credentials, storage
+from firebase_admin import auth, credentials, storage
 from app.core.config import settings
 
 # Initialize Firebase App if credentials provided, else use local fallback
 firebase_initialized = False
+firebase_app = None
 
-if settings.FIREBASE_CREDENTIALS_PATH and os.path.exists(settings.FIREBASE_CREDENTIALS_PATH):
-    try:
+try:
+    if settings.FIREBASE_CREDENTIALS_PATH and os.path.exists(settings.FIREBASE_CREDENTIALS_PATH):
         cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
-        firebase_admin.initialize_app(cred, {
+        firebase_app = firebase_admin.initialize_app(cred, {
             'storageBucket': settings.FIREBASE_STORAGE_BUCKET
         })
-        firebase_initialized = True
-        print("[Firebase] Firebase Admin SDK initialized successfully.")
-    except Exception as e:
-        print(f"[Firebase Warning] Failed to initialize Firebase: {e}. Using local storage fallback.")
-else:
-    print("[Firebase Info] Firebase credentials file not configured. Using local disk storage for uploads.")
+    else:
+        firebase_app = firebase_admin.initialize_app(options={
+            'projectId': os.getenv('GOOGLE_CLOUD_PROJECT', 'framevault-1c4d5')
+        })
+    firebase_initialized = True
+    print("[Firebase] Firebase Admin SDK initialized successfully.")
+except Exception as e:
+    print(f"[Firebase Warning] Failed to initialize Firebase: {e}. Using local storage fallback.")
+
+
+def verify_firebase_id_token(id_token: str) -> dict:
+    if not firebase_app:
+        raise RuntimeError("Firebase Admin SDK is not configured on the backend.")
+    return auth.verify_id_token(id_token, app=firebase_app)
 
 
 def save_photo_file(file_content: bytes, original_filename: str, event_id: int) -> tuple[str, str]:

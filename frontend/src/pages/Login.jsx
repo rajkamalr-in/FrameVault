@@ -219,8 +219,20 @@ export default function Login({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleGooglePlaceholder = () => {
-    setError('Google sign-in will be enabled when the app is deployed with the OAuth backend configuration.');
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      const authData = await authService.googleLogin();
+      if (onLoginSuccess) onLoginSuccess(authData.user);
+      navigate(authData.user.role === 'ADMIN' ? '/admin' : '/team');
+    } catch (err) {
+      const message = err.response?.data?.detail || err?.message || 'Google sign-in failed.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -287,7 +299,7 @@ export default function Login({ onLoginSuccess }) {
         <div className="space-y-3">
           <button
             type="button"
-            onClick={handleGooglePlaceholder}
+            onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 text-xs font-semibold shadow-sm hover:bg-gray-50 transition-all"
           >
             <GoogleIcon />

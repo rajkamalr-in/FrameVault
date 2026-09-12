@@ -1,19 +1,34 @@
 import api from './api';
+import { firebaseAuth, firebaseAuthError, googleProvider } from './firebase';
+import { signInWithPopup } from 'firebase/auth';
+
+function storeSession(authData) {
+  if (authData.access_token) {
+    sessionStorage.setItem('token', authData.access_token);
+    sessionStorage.setItem('user', JSON.stringify(authData.user));
+  }
+}
 
 export const authService = {
   async login(email, password) {
     const response = await api.post('/auth/login', { email, password });
-    if (response.data.access_token) {
-      // Use sessionStorage so each browser tab has its own independent session.
-      // This prevents cross-tab overwrites when multiple users log in on different tabs.
-      sessionStorage.setItem('token', response.data.access_token);
-      sessionStorage.setItem('user', JSON.stringify(response.data.user));
-    }
+    storeSession(response.data);
     return response.data;
   },
 
   async register(name, email, password, role = 'TEAM_MEMBER') {
     const response = await api.post('/auth/register', { name, email, password, role });
+    return response.data;
+  },
+
+  async googleLogin() {
+    if (firebaseAuthError || !firebaseAuth || !googleProvider) {
+      throw new Error('Google sign-in is unavailable because the Firebase web API key is invalid or not configured.');
+    }
+    const result = await signInWithPopup(firebaseAuth, googleProvider);
+    const idToken = await result.user.getIdToken();
+    const response = await api.post('/auth/google', { id_token: idToken });
+    storeSession(response.data);
     return response.data;
   },
 

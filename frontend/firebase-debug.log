@@ -1,0 +1,23 @@
+[debug] [2026-09-12T13:33:59.021Z] ----------------------------------------------------------------------
+[debug] [2026-09-12T13:33:59.035Z] Command:       C:\Users\acer\AppData\Local\npm-cache\_npx\ebaba8b9e55fd0a9\node_modules\node\bin\node.exe C:\Users\acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js apps:sdkconfig WEB 1:31558688378:web:1e3c07b94f277f884fe5c3 --project framevault-1c4d5
+[debug] [2026-09-12T13:33:59.036Z] CLI Version:   15.30.0
+[debug] [2026-09-12T13:33:59.036Z] Platform:      win32
+[debug] [2026-09-12T13:33:59.037Z] Node Version:  v20.20.2
+[debug] [2026-09-12T13:33:59.037Z] Detected Agent: github_copilot_vscode_agent
+[debug] [2026-09-12T13:33:59.037Z] Time:          Sat Sep 12 2026 19:03:59 GMT+0530 (India Standard Time)
+[debug] [2026-09-12T13:33:59.038Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-12T13:33:59.099Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-09-12T13:33:59.100Z] > authorizing via signed-in user (rajkamalrk.in@gmail.com)
+[debug] [2026-09-12T13:33:59.140Z] Checked if tokens are valid: true, expires at: 1789222322676
+[debug] [2026-09-12T13:33:59.140Z] Checked if tokens are valid: true, expires at: 1789222322676
+[debug] [2026-09-12T13:33:59.145Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:31558688378:web:1e3c07b94f277f884fe5c3/config [none]
+[debug] [2026-09-12T13:34:00.891Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:31558688378:web:1e3c07b94f277f884fe5c3/config 403
+[debug] [2026-09-12T13:34:00.892Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:31558688378:web:1e3c07b94f277f884fe5c3/config {"error":{"code":403,"message":"com.google.api.tenant.error.TenantManagerException: Project '31558688378' not found or permission denied.","status":"PERMISSION_DENIED"}}
+[debug] [2026-09-12T13:34:00.893Z] Request to https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:31558688378:web:1e3c07b94f277f884fe5c3/config had HTTP Error: 403, com.google.api.tenant.error.TenantManagerException: Project '31558688378' not found or permission denied.
+[debug] [2026-09-12T13:34:00.902Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:31558688378:web:1e3c07b94f277f884fe5c3/config had HTTP Error: 403, com.google.api.tenant.error.TenantManagerException: Project '31558688378' not found or permission denied.
+    at responseToError (C:\Users\acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\acer\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:415:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+[error] 
+[error] Error: Failed to get WEB app configuration. See firebase-debug.log for more info.
