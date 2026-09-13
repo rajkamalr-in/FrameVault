@@ -75,6 +75,32 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     return user
 
 
+@router.post("/team-members", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def create_team_member(
+    user_in: UserCreate,
+    current_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A user with this email address already exists."
+        )
+
+    user = User(
+        name=user_in.name,
+        email=user_in.email,
+        password_hash=get_password_hash(user_in.password),
+        role=UserRole.TEAM_MEMBER,
+        created_by=current_user.id,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 @router.post("/login", response_model=Token)
 def login(user_in: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
@@ -146,5 +172,8 @@ def read_current_user(current_user: User = Depends(get_current_user)):
 @router.get("/team-members", response_model=List[UserResponse])
 def get_team_members(current_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     """Retrieve list of Team Members available for event assignment."""
-    members = db.query(User).filter(User.role == UserRole.TEAM_MEMBER).all()
+    members = db.query(User).filter(
+        User.role == UserRole.TEAM_MEMBER,
+        User.created_by == current_user.id,
+    ).all()
     return members

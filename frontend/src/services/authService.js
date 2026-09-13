@@ -21,6 +21,16 @@ export const authService = {
     return response.data;
   },
 
+  async createTeamMember(name, email, password) {
+    const response = await api.post('/auth/team-members', {
+      name,
+      email,
+      password,
+      role: 'TEAM_MEMBER',
+    });
+    return response.data;
+  },
+
   async googleLogin() {
     if (firebaseAuthError || !firebaseAuth || !googleProvider) {
       throw new Error('Google sign-in is unavailable because the Firebase web API key is invalid or not configured.');

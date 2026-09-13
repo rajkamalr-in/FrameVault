@@ -145,7 +145,7 @@ export default function AdminDashboard() {
     setCreatingMember(true);
     setTeamModalMessage(null);
     try {
-      const createdUser = await authService.register(newMemberName, newMemberEmail, newMemberPassword, 'TEAM_MEMBER');
+      const createdUser = await authService.createTeamMember(newMemberName, newMemberEmail, newMemberPassword);
       const updatedMembers = await authService.getTeamMembers();
       setTeamMembers(updatedMembers);
 

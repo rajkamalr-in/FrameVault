@@ -29,7 +29,10 @@ def publish_gallery(
 ):
     """Admin endpoint to publish a gallery with a secure 6-digit access PIN."""
     # Check event exists
-    event = db.query(Event).filter(Event.id == request.event_id).first()
+    event = db.query(Event).filter(
+        Event.id == request.event_id,
+        Event.created_by == current_user.id,
+    ).first()
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found.")
 

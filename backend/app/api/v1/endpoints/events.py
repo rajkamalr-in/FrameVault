@@ -59,10 +59,17 @@ def create_event(
     # Assign team members if provided
     if event_in.member_ids:
         for member_id in event_in.member_ids:
-            user = db.query(User).filter(User.id == member_id).first()
-            if user:
-                event_member = EventMember(event_id=event.id, user_id=member_id)
-                db.add(event_member)
+            user = db.query(User).filter(
+                User.id == member_id,
+                User.role == UserRole.TEAM_MEMBER,
+                User.created_by == current_user.id,
+            ).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only assign team members created by your account."
+                )
+            db.add(EventMember(event_id=event.id, user_id=member_id))
         db.commit()
 
     return _format_event_response(event, db)
@@ -75,7 +82,9 @@ def get_events(
     db: Session = Depends(get_db)
 ):
     if current_user.role == UserRole.ADMIN:
-        events = db.query(Event).order_by(Event.created_at.desc()).all()
+        events = db.query(Event).filter(
+            Event.created_by == current_user.id
+        ).order_by(Event.created_at.desc()).all()
     else:
         # Team Members see assigned events
         event_members = db.query(EventMember).filter(EventMember.user_id == current_user.id).all()
@@ -95,8 +104,11 @@ def get_event_detail(
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    # Authorization Check: Admin or Assigned Team Member
-    if current_user.role != UserRole.ADMIN:
+    # Authorization Check: Admin owner or assigned Team Member
+    if current_user.role == UserRole.ADMIN:
+        if event.created_by != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    else:
         is_assigned = db.query(EventMember).filter(
             EventMember.event_id == event_id, EventMember.user_id == current_user.id
         ).first()
@@ -116,17 +128,31 @@ def assign_event_members(
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = db.query(Event).filter(
+        Event.id == event_id,
+        Event.created_by == current_user.id,
+    ).first()
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
-    # Clear existing members and re-assign
-    db.query(EventMember).filter(EventMember.event_id == event_id).delete()
-    
+    valid_users = []
     for uid in assignment.user_ids:
-        user = db.query(User).filter(User.id == uid).first()
-        if user:
-            db.add(EventMember(event_id=event_id, user_id=uid))
+        user = db.query(User).filter(
+            User.id == uid,
+            User.role == UserRole.TEAM_MEMBER,
+            User.created_by == current_user.id,
+        ).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only assign team members created by your account."
+            )
+        valid_users.append(user)
+
+    # Clear existing members only after every requested member is authorized.
+    db.query(EventMember).filter(EventMember.event_id == event_id).delete()
+    for user in valid_users:
+        db.add(EventMember(event_id=event_id, user_id=user.id))
             
     db.commit()
     return _format_event_response(event, db)
@@ -138,7 +164,10 @@ def delete_event(
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = db.query(Event).filter(
+        Event.id == event_id,
+        Event.created_by == current_user.id,
+    ).first()
     if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
     

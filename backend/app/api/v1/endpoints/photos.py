@@ -42,7 +42,11 @@ async def upload_photos(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Authorization Check: Admin OR assigned Team Member
-    if current_user.role != UserRole.ADMIN:
+    if current_user.role == UserRole.ADMIN:
+        if event.created_by != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        photos = db.query(Photo).filter(Photo.event_id == event_id).order_by(Photo.uploaded_at.desc()).all()
+    else:
         is_assigned = db.query(EventMember).filter(
             EventMember.event_id == event_id, EventMember.user_id == current_user.id
         ).first()
@@ -94,7 +98,13 @@ def get_event_photos(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
 
     # Authorization Check
-    if current_user.role != UserRole.ADMIN:
+    if current_user.role == UserRole.ADMIN:
+        if event.created_by != current_user.id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        photos = db.query(Photo).filter(
+            Photo.event_id == event_id
+        ).order_by(Photo.uploaded_at.desc()).all()
+    else:
         is_assigned = db.query(EventMember).filter(
             EventMember.event_id == event_id, EventMember.user_id == current_user.id
         ).first()
@@ -104,9 +114,6 @@ def get_event_photos(
                 detail="You are not assigned to view photos for this event."
             )
         # Team Members see photos they uploaded, or all event uploaded photos
-        photos = db.query(Photo).filter(Photo.event_id == event_id).order_by(Photo.uploaded_at.desc()).all()
-    else:
-        # Admins see all photos for event
         photos = db.query(Photo).filter(Photo.event_id == event_id).order_by(Photo.uploaded_at.desc()).all()
 
     return [_format_photo(p, db) for p in photos]
@@ -119,7 +126,10 @@ def toggle_photo_selection(
     db: Session = Depends(get_db)
 ):
     """Admin endpoint to select/deselect a photo for public gallery publishing."""
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    photo = db.query(Photo).join(Event).filter(
+        Photo.id == photo_id,
+        Event.created_by == current_user.id,
+    ).first()
     if not photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
 
@@ -136,7 +146,14 @@ def batch_select_photos(
     db: Session = Depends(get_db)
 ):
     """Admin endpoint to batch select or deselect photos for public gallery."""
-    db.query(Photo).filter(Photo.id.in_(batch.photo_ids)).update(
+    requested_photo_ids = set(batch.photo_ids)
+    owned_photo_ids = [photo_id for (photo_id,) in db.query(Photo.id).join(Event).filter(
+        Photo.id.in_(batch.photo_ids),
+        Event.created_by == current_user.id,
+    ).all()]
+    if set(owned_photo_ids) != requested_photo_ids:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="One or more photos were not found")
+    db.query(Photo).filter(Photo.id.in_(owned_photo_ids)).update(
         {Photo.is_selected: batch.is_selected}, synchronize_session=False
     )
     db.commit()
@@ -149,16 +166,23 @@ def delete_photo(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    photo = db.query(Photo).filter(Photo.id == photo_id).first()
+    photo = db.query(Photo).join(Event).filter(Photo.id == photo_id).first()
     if not photo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
 
-    # Only Admin or original Uploader can delete
-    if current_user.role != UserRole.ADMIN and photo.uploaded_by != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not authorized to delete this photo."
-        )
+    if current_user.role == UserRole.ADMIN and photo.event.created_by != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Photo not found")
+
+    if current_user.role != UserRole.ADMIN:
+        is_assigned = db.query(EventMember).filter(
+            EventMember.event_id == photo.event_id,
+            EventMember.user_id == current_user.id,
+        ).first()
+        if not is_assigned or photo.uploaded_by != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not authorized to delete this photo."
+            )
 
     db.delete(photo)
     db.commit()
