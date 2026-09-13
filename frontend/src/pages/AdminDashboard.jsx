@@ -692,7 +692,7 @@ export default function AdminDashboard() {
                     type="email"
                     value={newMemberEmail}
                     onChange={(e) => setNewMemberEmail(e.target.value)}
-                    placeholder="rajkamal@gmail.com"
+                    placeholder="name@gmail.com"
                     className="w-full px-3.5 py-2.5 rounded-xl snapflo-input text-xs font-medium"
                     required
                   />

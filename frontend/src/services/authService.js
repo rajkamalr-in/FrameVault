@@ -47,6 +47,29 @@ export const authService = {
     return response.data;
   },
 
+  async getProfile() {
+    const response = await api.get('/auth/profile');
+    return response.data;
+  },
+
+  async changePassword(currentPassword, newPassword) {
+    const response = await api.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+    return response.data;
+  },
+
+  async removeTeamMemberFromEvent(memberId, eventId) {
+    const response = await api.delete(`/auth/team-members/${memberId}/events/${eventId}`);
+    return response.data;
+  },
+
+  async deleteTeamMember(memberId) {
+    const response = await api.delete(`/auth/team-members/${memberId}`);
+    return response.data;
+  },
+
   async getTeamMembers() {
     const response = await api.get('/auth/team-members');
     return response.data;

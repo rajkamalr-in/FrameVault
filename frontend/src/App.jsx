@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import TeamDashboard from './pages/TeamDashboard';
 import PublicGallery from './pages/PublicGallery';
+import Profile from './pages/Profile';
 import { authService } from './services/authService';
 
 export default function App() {
@@ -77,8 +78,17 @@ export default function App() {
           <Route
             path="/team"
             element={
-              <ProtectedRoute allowedRoles={['TEAM_MEMBER']}>
+              <ProtectedRoute allowedRoles={['TEAM_MEMBER', 'ADMIN']}>
                 <TeamDashboard user={user} />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute allowedRoles={['TEAM_MEMBER', 'ADMIN']}>
+                <Profile />
               </ProtectedRoute>
             }
           />

@@ -33,10 +33,20 @@ export default function Navbar({ user, onLogout }) {
               </span>
             </div>
 
-            <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-gray-700">
+            {/* <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-gray-700">
               <UserIcon className="w-4 h-4 text-gray-400" />
               <span>{user.name}</span>
-            </div>
+            </div> */}
+
+            {(user.role === 'TEAM_MEMBER' || user.role === 'ADMIN') && (
+              <Link
+                to="/profile"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"
+              >
+                <UserIcon className="w-3.5 h-3.5" />
+                <span>Profile</span>
+              </Link>
+            )}
 
             <button
               onClick={handleLogout}
