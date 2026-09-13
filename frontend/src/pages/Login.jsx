@@ -219,9 +219,11 @@ export default function Login({ onLoginSuccess }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleGoogleLogin = async () => {
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
@@ -239,14 +241,23 @@ export default function Login({ onLoginSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isRegistering) {
         await authService.register(name, email, password, role);
-        const authData = await authService.login(email, password);
-        if (onLoginSuccess) onLoginSuccess(authData.user);
-        navigate(authData.user.role === 'ADMIN' ? '/admin' : '/team');
+        setIsRegistering(false);
+        setName('');
+        setPassword('');
+        setRole('ADMIN');
+        setSuccess('Account created successfully. Please sign in to continue.');
       } else {
         const authData = await authService.login(email, password);
         if (onLoginSuccess) onLoginSuccess(authData.user);
@@ -297,6 +308,12 @@ export default function Login({ onLoginSuccess }) {
           </div>
         )}
 
+        {success && (
+          <div className="flex items-center gap-2 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs">
+            <span>{success}</span>
+          </div>
+        )}
+
         <div className="space-y-3">
           <button
             type="button"
@@ -317,7 +334,7 @@ export default function Login({ onLoginSuccess }) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {isRegistering && (
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1.5">Full Name</label>
