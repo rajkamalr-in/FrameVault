@@ -1,11 +1,10 @@
 import secrets
 import string
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.models.event import Event
 from app.models.photo import Photo
 from app.models.gallery import Gallery

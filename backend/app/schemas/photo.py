@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
-from app.schemas.user import UserResponse
 
 
 class PhotoResponse(BaseModel):

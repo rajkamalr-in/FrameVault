@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Calendar, Users, Image as ImageIcon, Share2, Trash2, CheckCircle2, Shield, AlertCircle, ExternalLink, Sparkles, FolderPlus, Layers, UserPlus, Check } from 'lucide-react';
+import { Users, Image as ImageIcon, Share2, Trash2, CheckCircle2, Shield, AlertCircle, ExternalLink, FolderPlus, UserPlus } from 'lucide-react';
 import { eventService } from '../services/eventService';
 import { photoService } from '../services/photoService';
 import { authService } from '../services/authService';

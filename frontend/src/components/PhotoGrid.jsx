@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Eye, Trash2, Download, CheckSquare, Square, X } from 'lucide-react';
+import { Check, Trash2, Download, CheckSquare, Square, X } from 'lucide-react';
 import { photoService } from '../services/photoService';
 
 export default function PhotoGrid({

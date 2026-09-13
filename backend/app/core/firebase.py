@@ -1,6 +1,5 @@
 import os
 import uuid
-import shutil
 import firebase_admin
 from firebase_admin import auth, credentials, storage
 from app.core.config import settings

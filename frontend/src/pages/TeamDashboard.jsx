@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Calendar, Image as ImageIcon, Users, AlertCircle, CheckCircle, UploadCloud } from 'lucide-react';
+import { Image as ImageIcon, Users, AlertCircle } from 'lucide-react';
 import { eventService } from '../services/eventService';
 import { photoService } from '../services/photoService';
 import PhotoUploader from '../components/PhotoUploader';

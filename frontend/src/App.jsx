@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -78,7 +78,7 @@ export default function App() {
           <Route
             path="/team"
             element={
-              <ProtectedRoute allowedRoles={['TEAM_MEMBER', 'ADMIN']}>
+              <ProtectedRoute allowedRoles={['TEAM_MEMBER']}>
                 <TeamDashboard user={user} />
               </ProtectedRoute>
             }

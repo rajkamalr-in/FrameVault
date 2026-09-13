@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from sqlalchemy.orm import Session
 
@@ -45,7 +45,6 @@ async def upload_photos(
     if current_user.role == UserRole.ADMIN:
         if event.created_by != current_user.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-        photos = db.query(Photo).filter(Photo.event_id == event_id).order_by(Photo.uploaded_at.desc()).all()
     else:
         is_assigned = db.query(EventMember).filter(
             EventMember.event_id == event_id, EventMember.user_id == current_user.id

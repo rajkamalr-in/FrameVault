@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, ShieldCheck, Camera, Users, Lock, KeyRound, CheckCircle, Image as ImageIcon, Layers, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Camera, Users, Lock, KeyRound, Image as ImageIcon } from 'lucide-react';
 import TrizenLogo from '../components/TrizenLogo';
 
 export default function Home({ user }) {

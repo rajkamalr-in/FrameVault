@@ -48,6 +48,16 @@ export default function Navbar({ user, onLogout }) {
               </Link>
             )}
 
+            {/* {user.role === 'TEAM_MEMBER' && (
+              <Link
+                to="/team"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Team Dashboard</span>
+              </Link>
+            )} */}
+
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors"

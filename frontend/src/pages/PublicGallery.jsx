@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Lock, KeyRound, Camera, AlertCircle, Eye, Download, X, Sparkles, ShieldCheck } from 'lucide-react';
+import { KeyRound, Camera, AlertCircle, Eye, Download, X, Sparkles, ShieldCheck } from 'lucide-react';
 import { galleryService } from '../services/galleryService';
 import TrizenLogo from '../components/TrizenLogo';
 
