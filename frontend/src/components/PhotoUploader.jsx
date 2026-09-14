@@ -70,7 +70,13 @@ export default function PhotoUploader({ eventId, onUploadSuccess }) {
       setSelectedFiles([]);
       if (onUploadSuccess) onUploadSuccess(uploaded);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to upload photos. Please try again.');
+      const detail = err.response?.data?.detail;
+      const msg = typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map(d => d.msg || d.message).join(', ')
+          : err.message || 'Failed to upload photos. Please try again.';
+      setError(msg);
     } finally {
       setUploading(false);
     }

@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     DB_NAME: str = "trizen_photo_share"
 
     # Firebase & Storage Settings
-    FIREBASE_STORAGE_BUCKET: str = "trizen-photo-share.appspot.com"
-    FIREBASE_CREDENTIALS_PATH: Optional[str] = None
+    APP_STORAGE_BUCKET: str = "photoshare-ec911-photos"
+    APP_CREDENTIALS_PATH: Optional[str] = None
     LOCAL_UPLOADS_DIR: str = "uploads"
 
     model_config = SettingsConfigDict(

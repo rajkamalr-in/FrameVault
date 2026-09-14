@@ -9,14 +9,17 @@ firebase_initialized = False
 firebase_app = None
 
 try:
-    if settings.FIREBASE_CREDENTIALS_PATH and os.path.exists(settings.FIREBASE_CREDENTIALS_PATH):
-        cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+    if settings.APP_CREDENTIALS_PATH and os.path.exists(settings.APP_CREDENTIALS_PATH):
+        cred = credentials.Certificate(settings.APP_CREDENTIALS_PATH)
         firebase_app = firebase_admin.initialize_app(cred, {
-            'storageBucket': settings.FIREBASE_STORAGE_BUCKET
+            'storageBucket': settings.APP_STORAGE_BUCKET
         })
     else:
+        # On Cloud Run, GOOGLE_CLOUD_PROJECT is automatically set by GCP
+        project_id = os.getenv('GOOGLE_CLOUD_PROJECT', 'photoshare-ec911')
         firebase_app = firebase_admin.initialize_app(options={
-            'projectId': os.getenv('GOOGLE_CLOUD_PROJECT', 'framevault-1c4d5')
+            'projectId': project_id,
+            'storageBucket': settings.APP_STORAGE_BUCKET,
         })
     firebase_initialized = True
     print("[Firebase] Firebase Admin SDK initialized successfully.")
@@ -32,22 +35,33 @@ def verify_firebase_id_token(id_token: str) -> dict:
 
 def save_photo_file(file_content: bytes, original_filename: str, event_id: int) -> tuple[str, str]:
     """
-    Saves a photo file either to Firebase Storage or local disk.
+    Saves a photo file to Google Cloud Storage or local disk fallback.
     Returns a tuple of (storage_path, file_url).
     """
     ext = os.path.splitext(original_filename)[1]
     unique_filename = f"{uuid.uuid4().hex}{ext}"
     storage_path = f"events/{event_id}/{unique_filename}"
+    bucket_name = settings.APP_STORAGE_BUCKET or "photoshare-ec911-photos"
 
     if firebase_initialized:
         try:
-            bucket = storage.bucket()
+            bucket = storage.bucket(bucket_name, app=firebase_app)
             blob = bucket.blob(storage_path)
-            blob.upload_from_string(file_content)
-            blob.make_public()
-            return storage_path, blob.public_url
+
+            content_type = "image/jpeg"
+            ext_lower = ext.lower()
+            if ext_lower == ".png":
+                content_type = "image/png"
+            elif ext_lower == ".webp":
+                content_type = "image/webp"
+            elif ext_lower == ".gif":
+                content_type = "image/gif"
+
+            blob.upload_from_string(file_content, content_type=content_type)
+            public_url = f"https://storage.googleapis.com/{bucket_name}/{storage_path}"
+            return storage_path, public_url
         except Exception as err:
-            print(f"[Firebase Error] Upload failed: {err}. Falling back to local storage.")
+            print(f"[Storage Error] Cloud upload to {bucket_name} failed: {err}. Falling back to local storage.")
 
     # Local Storage Fallback
     local_dir = os.path.join(settings.LOCAL_UPLOADS_DIR, f"events/{event_id}")
@@ -60,3 +74,25 @@ def save_photo_file(file_content: bytes, original_filename: str, event_id: int) 
     # File URL relative to FastAPI static files server
     file_url = f"/static/events/{event_id}/{unique_filename}"
     return storage_path, file_url
+
+
+def delete_photo_file(storage_path: str):
+    """Deletes photo blob from Cloud Storage if present, or local disk."""
+    if not storage_path:
+        return
+    bucket_name = settings.APP_STORAGE_BUCKET or "photoshare-ec911-photos"
+    if firebase_initialized:
+        try:
+            bucket = storage.bucket(bucket_name, app=firebase_app)
+            blob = bucket.blob(storage_path)
+            blob.delete()
+            return
+        except Exception as err:
+            print(f"[Storage Warning] Failed to delete blob {storage_path}: {err}")
+
+    try:
+        local_path = os.path.join(settings.LOCAL_UPLOADS_DIR, storage_path)
+        if os.path.exists(local_path):
+            os.remove(local_path)
+    except Exception:
+        pass

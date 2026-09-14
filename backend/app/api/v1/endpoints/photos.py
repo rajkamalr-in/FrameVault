@@ -7,7 +7,7 @@ from app.models.user import User, UserRole
 from app.models.event import Event, EventMember
 from app.models.photo import Photo
 from app.schemas.photo import PhotoResponse, PhotoSelectBatch
-from app.core.firebase import save_photo_file
+from app.core.firebase import save_photo_file, delete_photo_file
 from app.api.v1.endpoints.auth import get_current_user, get_admin_user
 
 router = APIRouter()
@@ -55,17 +55,13 @@ async def upload_photos(
                 detail="You are not authorized to upload photos to this event."
             )
 
+    if not files:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files provided.")
+
     uploaded_photos = []
     for file in files:
-        content = await file.read()
-        file_size = len(content)
-        
-        # Upload file binary to storage engine
-        storage_path, file_url = save_photo_file(
-            file_content=content,
-            original_filename=file.filename,
-            event_id=event_id
-        )
+        file_content = await file.read()
+        storage_path, file_url = save_photo_file(file_content, file.filename, event_id)
 
         photo = Photo(
             event_id=event_id,
@@ -73,7 +69,7 @@ async def upload_photos(
             filename=file.filename,
             storage_path=storage_path,
             file_url=file_url,
-            file_size_bytes=file_size,
+            file_size_bytes=len(file_content),
             is_selected=False
         )
         db.add(photo)
@@ -84,6 +80,7 @@ async def upload_photos(
         db.refresh(p)
 
     return [_format_photo(p, db) for p in uploaded_photos]
+
 
 
 @router.get("/event/{event_id}", response_model=List[PhotoResponse])
@@ -183,6 +180,7 @@ def delete_photo(
                 detail="You are not authorized to delete this photo."
             )
 
+    delete_photo_file(photo.storage_path)
     db.delete(photo)
     db.commit()
     return None

@@ -243,7 +243,10 @@ export default function Login({ onLoginSuccess }) {
     setError('');
     setSuccess('');
 
-    if (!email.trim() || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password;
+
+    if (!cleanEmail || !cleanPassword) {
       setError('Please enter your email and password.');
       return;
     }
@@ -252,14 +255,12 @@ export default function Login({ onLoginSuccess }) {
 
     try {
       if (isRegistering) {
-        await authService.register(name, email, password, role);
-        setIsRegistering(false);
-        setName('');
-        setPassword('');
-        setRole('ADMIN');
-        setSuccess('Account created successfully. Please sign in to continue.');
+        await authService.register(name.trim(), cleanEmail, cleanPassword, role);
+        const authData = await authService.login(cleanEmail, cleanPassword);
+        if (onLoginSuccess) onLoginSuccess(authData.user);
+        navigate(authData.user.role === 'ADMIN' ? '/admin' : '/team');
       } else {
-        const authData = await authService.login(email, password);
+        const authData = await authService.login(cleanEmail, cleanPassword);
         if (onLoginSuccess) onLoginSuccess(authData.user);
         navigate(authData.user.role === 'ADMIN' ? '/admin' : '/team');
       }
@@ -314,25 +315,6 @@ export default function Login({ onLoginSuccess }) {
           </div>
         )}
 
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 text-xs font-semibold shadow-sm hover:bg-gray-50 transition-all"
-          >
-            <GoogleIcon />
-            <span className="leading-none">{isRegistering ? 'Sign up with Google' : 'Continue with Google'}</span>
-          </button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-[11px] font-medium text-gray-500">
-              <span className="bg-white px-3">or continue with email</span>
-            </div>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {isRegistering && (
@@ -361,6 +343,7 @@ export default function Login({ onLoginSuccess }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@abc.com"
+                autoComplete="email"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl snapflo-input text-xs font-medium"
                 required
               />
@@ -376,6 +359,7 @@ export default function Login({ onLoginSuccess }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete={isRegistering ? 'new-password' : 'current-password'}
                 className="w-full pl-10 pr-10 py-2.5 rounded-xl snapflo-input text-xs font-medium"
                 required
               />

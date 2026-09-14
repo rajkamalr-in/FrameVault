@@ -2,6 +2,7 @@ import secrets
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -36,7 +37,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
 
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(func.lower(User.email) == email.strip().lower()).first()
     if user is None:
         raise credentials_exception
     return user
@@ -53,20 +54,26 @@ def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    clean_email = user_in.email.strip().lower()
+    clean_name = user_in.name.strip()
+
+    existing_user = db.query(User).filter(func.lower(User.email) == clean_email).first()
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A user with this email address already exists."
-        )
+        # If user registered via Google or needs to update password for manual login
+        existing_user.password_hash = get_password_hash(user_in.password)
+        if clean_name:
+            existing_user.name = clean_name
+        db.commit()
+        db.refresh(existing_user)
+        return existing_user
     
     # If no users exist yet in DB, elevate first registered user to ADMIN automatically
     user_count = db.query(User).count()
     role = UserRole.ADMIN if user_count == 0 else user_in.role
 
     user = User(
-        name=user_in.name,
-        email=user_in.email,
+        name=clean_name,
+        email=clean_email,
         password_hash=get_password_hash(user_in.password),
         role=role
     )
@@ -82,16 +89,23 @@ def create_team_member(
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db)
 ):
-    existing_user = db.query(User).filter(User.email == user_in.email).first()
+    clean_email = user_in.email.strip().lower()
+    clean_name = user_in.name.strip()
+
+    existing_user = db.query(User).filter(func.lower(User.email) == clean_email).first()
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A user with this email address already exists."
-        )
+        # Update existing user credentials and assign as team member
+        existing_user.name = clean_name or existing_user.name
+        existing_user.password_hash = get_password_hash(user_in.password)
+        existing_user.role = UserRole.TEAM_MEMBER
+        existing_user.created_by = current_user.id
+        db.commit()
+        db.refresh(existing_user)
+        return existing_user
 
     user = User(
-        name=user_in.name,
-        email=user_in.email,
+        name=clean_name,
+        email=clean_email,
         password_hash=get_password_hash(user_in.password),
         role=UserRole.TEAM_MEMBER,
         created_by=current_user.id,
@@ -104,7 +118,8 @@ def create_team_member(
 
 @router.post("/login", response_model=Token)
 def login(user_in: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == user_in.email).first()
+    clean_email = user_in.email.strip().lower()
+    user = db.query(User).filter(func.lower(User.email) == clean_email).first()
     if not user or not verify_password(user_in.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -128,15 +143,16 @@ def google_login(payload: GoogleLoginRequest, db: Session = Depends(get_db)):
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google sign-in token.") from exc
 
-    email = claims.get("email")
-    if not email:
+    raw_email = claims.get("email")
+    if not raw_email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Google account did not provide an email address.")
 
-    user = db.query(User).filter(User.email == email).first()
+    clean_email = raw_email.strip().lower()
+    user = db.query(User).filter(func.lower(User.email) == clean_email).first()
     if not user:
         user = User(
-            name=claims.get("name") or email.split("@")[0],
-            email=email,
+            name=claims.get("name") or clean_email.split("@")[0],
+            email=clean_email,
             password_hash=get_password_hash(secrets.token_urlsafe(32)),
             role=UserRole.ADMIN if db.query(User).count() == 0 else UserRole.TEAM_MEMBER,
         )

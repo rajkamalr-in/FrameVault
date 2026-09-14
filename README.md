@@ -17,6 +17,103 @@ A full-stack, role-based photo sharing and event management platform built for *
 
 ---
 
+## 🏗️ System Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph Client Layer
+        AdminBrowser["Admin / Lead (React SPA)"]
+        TeamBrowser["Team Member (React SPA)"]
+        CustomerBrowser["Customer (React SPA)"]
+    Notice["Hosted on Firebase Hosting (https://framevau.web.app)"]
+    end
+
+    subgraph API & Backend Gateway
+        FastAPI["FastAPI REST Server (Python 3.11 / Uvicorn)"]
+        AuthMiddleware["JWT Auth & Security Middleware"]
+        Router["API v1 Routers (Auth, Events, Photos, Gallery)"]
+        FastAPI --> AuthMiddleware
+        AuthMiddleware --> Router
+    end
+
+    subgraph Persistence Layer
+        DB[("Database (MySQL / SQLite)\n- Users & Roles\n- Events & Team Junctions\n- Photo Metadata\n- Gallery PIN Hashes")]
+        GCS[("Cloud Storage Bucket\n(gs://photoshare-ec911-photos)\n- Image Assets (.jpg, .png, .webp)")]
+    end
+
+    AdminBrowser -->|HTTPS / REST API| FastAPI
+    TeamBrowser -->|HTTPS / REST API| FastAPI
+    CustomerBrowser -->|HTTPS / REST API| FastAPI
+
+    Router -->|SQLAlchemy ORM| DB
+    Router -->|Google Cloud Storage SDK| GCS
+    CustomerBrowser -->|Direct Image Download| GCS
+```
+
+---
+
+## 📊 Database Entity-Relationship (ER) Diagram
+
+```mermaid
+erDiagram
+    users {
+        int id PK
+        string name
+        string email UK
+        string password_hash
+        string role "ADMIN | TEAM_MEMBER"
+        int created_by FK "references users.id"
+        datetime created_at
+    }
+
+    events {
+        int id PK
+        string title
+        text description
+        int created_by FK "references users.id"
+        datetime created_at
+    }
+
+    event_members {
+        int id PK
+        int event_id FK "references events.id"
+        int user_id FK "references users.id"
+        datetime assigned_at
+    }
+
+    photos {
+        int id PK
+        int event_id FK "references events.id"
+        int uploaded_by FK "references users.id"
+        string filename
+        string storage_path
+        string file_url
+        int file_size_bytes
+        boolean is_selected
+        datetime uploaded_at
+    }
+
+    galleries {
+        int id PK
+        int event_id FK "references events.id"
+        string share_slug UK
+        string pin_hash
+        boolean is_published
+        datetime created_at
+        datetime updated_at
+    }
+
+    users ||--o{ users : "creates (Admin -> Team Member)"
+    users ||--o{ events : "creates"
+    users ||--o{ event_members : "assigned to"
+    events ||--o{ event_members : "has members"
+    users ||--o{ photos : "uploads"
+    events ||--o{ photos : "contains"
+    events ||--|| galleries : "publishes as"
+```
+
+---
+
 ## 📁 Repository Directory Structure
 
 ```

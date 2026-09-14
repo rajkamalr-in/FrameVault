@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,14 +13,16 @@ const firebaseConfig = {
 
 export let firebaseAuth = null;
 export let googleProvider = null;
+export let storage = null;
 export let firebaseAuthError = null;
 
 try {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   firebaseAuth = getAuth(app);
+  storage = getStorage(app);
   googleProvider = new GoogleAuthProvider();
   googleProvider.setCustomParameters({ prompt: 'select_account' });
 } catch (error) {
   firebaseAuthError = error;
-  console.error('Firebase Authentication is not configured:', error);
+  console.error('Firebase Authentication/Storage is not configured:', error);
 }
