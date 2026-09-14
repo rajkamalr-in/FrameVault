@@ -57,59 +57,59 @@ graph TD
 ```mermaid
 erDiagram
     users {
-        int id PK
-        string name
-        string email UK
-        string password_hash
-        string role "ADMIN | TEAM_MEMBER"
-        int created_by FK "references users.id"
-        datetime created_at
+        INT id PK "Indexes: PRIMARY"
+        VARCHAR_100 name
+        VARCHAR_150 email UK "Indexes: email"
+        VARCHAR_255 password_hash
+        ENUM role "ENUM('ADMIN', 'TEAM_MEMBER')"
+        TIMESTAMP created_at
+        INT created_by FK "Indexes: fk_admin_creator"
     }
 
     events {
-        int id PK
-        string title
-        text description
-        int created_by FK "references users.id"
-        datetime created_at
+        INT id PK "Indexes: PRIMARY"
+        VARCHAR_150 title
+        TEXT description
+        INT created_by FK "Indexes: created_by"
+        TIMESTAMP created_at
     }
 
     event_members {
-        int id PK
-        int event_id FK "references events.id"
-        int user_id FK "references users.id"
-        datetime assigned_at
+        INT id PK "Indexes: PRIMARY"
+        INT event_id FK "Indexes: unique_event_user"
+        INT user_id FK "Indexes: user_id"
+        TIMESTAMP assigned_at
     }
 
     photos {
-        int id PK
-        int event_id FK "references events.id"
-        int uploaded_by FK "references users.id"
-        string filename
-        string storage_path
-        string file_url
-        int file_size_bytes
-        boolean is_selected
-        datetime uploaded_at
+        INT id PK "Indexes: PRIMARY"
+        INT event_id FK "Indexes: event_id"
+        INT uploaded_by FK "Indexes: uploaded_by"
+        VARCHAR_255 filename
+        VARCHAR_500 storage_path
+        VARCHAR_1000 file_url
+        INT file_size_bytes
+        TINYINT_1 is_selected
+        TIMESTAMP uploaded_at
     }
 
     galleries {
-        int id PK
-        int event_id FK "references events.id"
-        string share_slug UK
-        string pin_hash
-        boolean is_published
-        datetime created_at
-        datetime updated_at
+        INT id PK "Indexes: PRIMARY"
+        INT event_id FK "Indexes: event_id"
+        VARCHAR_100 share_slug UK "Indexes: share_slug"
+        VARCHAR_255 pin_hash
+        TINYINT_1 is_published
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
-    users ||--o{ users : "creates (Admin -> Team Member)"
-    users ||--o{ events : "creates"
-    users ||--o{ event_members : "assigned to"
-    events ||--o{ event_members : "has members"
-    users ||--o{ photos : "uploads"
-    events ||--o{ photos : "contains"
-    events ||--|| galleries : "publishes as"
+    users ||--o{ users : "created_by (fk_admin_creator)"
+    users ||--o{ events : "creates (created_by)"
+    events ||--o{ event_members : "has members (event_id)"
+    users ||--o{ event_members : "assigned member (user_id)"
+    events ||--o{ photos : "contains (event_id)"
+    users ||--o{ photos : "uploads (uploaded_by)"
+    events ||--o{ galleries : "publishes (event_id)"
 ```
 
 ---
