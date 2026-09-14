@@ -161,7 +161,7 @@ trizen-photo-share/
 ### 1. Database Setup (MySQL)
 Create the MySQL database:
 ```sql
-CREATE DATABASE trizen_photo_share;
+CREATE DATABASE photoshare_db;
 ```
 
 ### 2. Backend Setup (FastAPI)
@@ -190,7 +190,7 @@ DB_HOST="localhost"
 DB_PORT=3306
 DB_USER="root"
 DB_PASSWORD=""
-DB_NAME="trizen_photo_share"
+DB_NAME="photoshare_db"
 ```
 
 Start the FastAPI Backend server:
