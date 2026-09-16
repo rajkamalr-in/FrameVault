@@ -10,7 +10,7 @@
    - **Customer**: Access published galleries using a shareable link and a secure 6-digit access PIN without creating an account.
 
 2. **Photo Storage & Database Architecture**:
-   - **Database**: MySQL (`trizen_photo_share`) storing user credentials, events, team member junctions, photo metadata, and hashed gallery access PINs.
+   - **Database**: MySQL (`photoshare_db`) storing user credentials, events, team member junctions, photo metadata, and hashed gallery access PINs.
    - **Storage Layer**: Firebase Storage SDK integration with automatic local disk storage fallback (`backend/uploads/`). Image binary files are never stored directly in MySQL.
 
 ---
@@ -115,7 +115,7 @@ erDiagram
 ## 📁 Repository Directory Structure
 
 ```
-trizen-photo-share/
+photo-share/
 ├── backend/
 │   ├── app/
 │   │   ├── api/
