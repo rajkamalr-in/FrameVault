@@ -1,6 +1,4 @@
-# TrizenAI Full-Stack Photo Sharing Platform (FrameVault)
-
-A full-stack, role-based photo sharing and event management platform built for **TrizenAI Technologies**.
+# Photo Sharing Platform (FrameVault)
 
 ---
 
