@@ -178,9 +178,9 @@ pip install -r requirements.txt
 
 Create `.env` file inside `backend/`:
 ```env
-PROJECT_NAME="TrizenAI Photo Sharing Platform"
+PROJECT_NAME="Photo Sharing Platform"
 API_V1_STR="/api/v1"
-SECRET_KEY="trizen_super_secret_jwt_key_2026"
+SECRET_KEY="super_secret_jwt_key_2026"
 ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
